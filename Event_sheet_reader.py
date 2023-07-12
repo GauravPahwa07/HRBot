@@ -6,7 +6,7 @@ from slack_sdk import WebClient
 
 def read_google_sheet():
     # Path to the credentials JSON file you downloaded
-    credentials_file = r'C:\Users\gaura\Downloads\well-wisher-bot-9dc5af4bea3b.json'
+    credentials_file = r'sheet_api.json'
 
     # Authenticate with the Google Sheets API
     scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
@@ -22,14 +22,14 @@ def read_google_sheet():
     # Read the data from the sheet
     data = sheet.get_all_records()
 
-    # Get the current date
-    current_date = datetime.now().date()
+    # Get the current date (ignoring the year)
+    current_date = datetime.now().date().replace(year=datetime.now().year)
 
     # Set the SSL certificate location
     ssl._create_default_https_context = ssl._create_unverified_context
 
     # Initialize the Slack client
-    slack_token = 'xoxb-7556033825-5569483529268-R5yWhnNQWUBHr80OZMhJOG88'
+    slack_token = 'xoxb-7556033825-5569483529268-kUM7mTpF48aK9bEG3PGJC5PU'
     slack_client = WebClient(token=slack_token)
 
     # Process the data
@@ -37,20 +37,32 @@ def read_google_sheet():
         # Access individual fields
         name = row['Name']
         email = row['Email']
-        birthday = datetime.strptime(row['Birthday'], "%d %B %Y").date()
-        department = row['Department']
+        event_date = datetime.strptime(row['Date'], "%d %B %Y").date()
+        event_type = row['Event']
+        employee_status = row['Employee Status']
 
-        # Check if the birthday is today
-        if birthday == current_date:
-            # Post the birthday wish to the Slack channel
-            message = f"Happy birthday, {name}!"
-            response = slack_client.chat_postMessage(channel='C03A6JM3CU8', text=message)
+        # Check if the employee is not an ex-employee and the event date (ignoring the year) is today
+        if (
+            employee_status != 'ex-employee'
+            and event_date.day == current_date.day
+            and event_date.month == current_date.month
+        ):
+            # Customize the message based on the event type
+            if event_type == 'Birthday':
+                message = f"Happy birthday, {name}! May your day be filled with joy and laughter. 🎉🎂"
+            elif event_type == 'DOJ':
+                message = f"Congratulations, {name}, on your work anniversary! Thank you for your dedication and hard work. 🎉🎊"
+            elif event_type == 'Anniversary':
+                message = f"Happy anniversary, {name}! Wishing you many more years of love and happiness together. 💑💍"
+
+            # Post the message to the Slack channel
+            response = slack_client.chat_postMessage(channel='C02JXF77LKH', text=message)
 
             # Handle API errors
             if response["ok"]:
-                print(f"Birthday wish posted for {name} in Slack.")
+                print(f"Message posted for {name} in Slack.")
             else:
-                print(f"Error posting birthday wish for {name} in Slack: {response['error']}")
+                print(f"Error posting message for {name} in Slack: {response['error']}")
 
-# Call the function to read the Google Sheet and identify employees with a birthday today
+# Call the function to read the Google Sheet and identify events today
 read_google_sheet()
