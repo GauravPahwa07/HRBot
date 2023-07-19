@@ -29,7 +29,7 @@ def read_google_sheet():
     ssl._create_default_https_context = ssl._create_unverified_context
 
     # Initialize the Slack client
-    slack_token = 'xoxb-7556033825-5569483529268-kUM7mTpF48aK9bEG3PGJC5PU'
+    slack_token = 'xoxb-7556033825-5569483529268-DFwTVksCMy36Fw06PyZn9msy'
     slack_client = WebClient(token=slack_token)
 
     # Process the data
@@ -43,7 +43,7 @@ def read_google_sheet():
 
         # Check if the employee is not an ex-employee and the event date (ignoring the year) is today
         if (
-            employee_status != 'ex-employee'
+            employee_status != 'ex'
             and event_date.day == current_date.day
             and event_date.month == current_date.month
         ):
@@ -56,7 +56,7 @@ def read_google_sheet():
                 message = f"Happy anniversary, {name}! Wishing you many more years of love and happiness together. 💑💍"
 
             # Post the message to the Slack channel
-            response = slack_client.chat_postMessage(channel='C02JXF77LKH', text=message)
+            response = slack_client.chat_postMessage(channel='C05JE13BDTJ', text=message)
 
             # Handle API errors
             if response["ok"]:
