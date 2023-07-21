@@ -29,7 +29,7 @@ def read_google_sheet():
     ssl._create_default_https_context = ssl._create_unverified_context
 
     # Initialize the Slack client
-    slack_token = 'xoxb-7556033825-5569483529268-DFwTVksCMy36Fw06PyZn9msy'
+    slack_token = 'xoxb-7556033825-5569483529268-3Kw4tClSI3RKd7dhygcxTbZt'
     slack_client = WebClient(token=slack_token)
 
     # Process the data
@@ -56,7 +56,7 @@ def read_google_sheet():
                 message = f"Happy anniversary, {name}! Wishing you many more years of love and happiness together. 💑💍"
 
             # Post the message to the Slack channel
-            response = slack_client.chat_postMessage(channel='C05JE13BDTJ', text=message)
+            response = slack_client.chat_postMessage(channel='C02JXF77LKH', text=message)
 
             # Handle API errors
             if response["ok"]:
