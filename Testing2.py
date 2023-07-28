@@ -9,7 +9,7 @@ import time
 
 def read_google_sheet():
     # Path to the credentials JSON file you downloaded
-    credentials_file = r'sheet_api.json'
+    credentials_file = 'sheet_api.json'
 
     # Authenticate with the Google Sheets API
     scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
@@ -32,7 +32,7 @@ def read_google_sheet():
     ssl._create_default_https_context = ssl._create_unverified_context
 
     # Initialize the Slack client
-    slack_token = 'xoxb-7556033825-5569483529268-3Kw4tClSI3RKd7dhygcxTbZt'
+    slack_token = 'xoxb-7556033825-5569483529268-IhMYBKc5NjtdHtSOkfM6xptC'
     slack_client = WebClient(token=slack_token)
 
     # Define the function to upload an image to Slack
@@ -44,7 +44,7 @@ def read_google_sheet():
 
                 # Use the Slack WebClient to upload the file
                 image_upload_response = slack_client.files_upload(
-                    channels="C05JE13BDTJ",
+                    channels="C02JXF77LKH",
                     initial_comment="",  # Empty initial comment
                     file=image_content,  # Use the "file" parameter directly to specify the image content
                     filename="birthday_image.png",
@@ -63,65 +63,63 @@ def read_google_sheet():
         # Access individual fields
         name = row['Name']
         email = row['Email']
-        event_date = datetime.strptime(row['Date'], "%d %B %Y").date()
-        event_type = row['Event']
+        dob_date_str = row['DOB']  # Assuming DOB format is "19 July 1994"
+        dob_date = datetime.strptime(dob_date_str, "%d %B %Y").date().replace(year=datetime.now().year)
+        doj_date_str = row['DOJ']  # Assuming DOJ format is "19 July 2023"
+        doj_date = datetime.strptime(doj_date_str, "%d %B %Y").date().replace(year=datetime.now().year)
         employee_status = row['Employee Status']
 
-        # Check if the employee is not an ex-employee and the event date (ignoring the year) is today
+        # Check if the employee is not an ex-employee and today is their birthday
         if (
             employee_status != 'ex'
-            and event_date.day == current_date.day
-            and event_date.month == current_date.month
+            and dob_date.day == current_date.day
+            and dob_date.month == current_date.month
         ):
-            # Check if the birthday message has been posted already
-            if not row.get('Birthday_Message_Posted') and event_type == 'Birthday':
-                # Mark the birthday message as posted in the data
-                row['Birthday_Message_Posted'] = True
+            # Customize the birthday message
+            message = f"We wish you a very Happy birthday @{name} ! May this special day bring you joy, laughter, and countless wonderful memories. Enjoy your day to the fullest!. 🎉🎂"
 
-                # Customize the birthday message
-                message = f"Happy birthday, {name}! May your day be filled with joy and laughter. 🎉🎂"
+            try:
+                response = slack_client.chat_postMessage(channel='C02JXF77LKH', text=message)
+                # Handle API errors
+                if response["ok"]:
+                    print(f"Message posted for {name} in Slack (Birthday).")
+                else:
+                    print(f"Error posting message for {name} in Slack (Birthday): {response['error']}")
+            except SlackApiError as e:
+                print(f"Error posting message for {name} in Slack (Birthday): {e.response['error']}")
 
-                try:
-                    response = slack_client.chat_postMessage(channel='C05JE13BDTJ', text=message)
-                    # Handle API errors
-                    if response["ok"]:
-                        print(f"Message posted for {name} in Slack.")
-                    else:
-                        print(f"Error posting message for {name} in Slack: {response['error']}")
-                except SlackApiError as e:
-                    print(f"Error posting message for {name} in Slack: {e.response['error']}")
+            # Add a slight delay before uploading the image (optional, to ensure the message is posted first)
+            time.sleep(1)
 
-                # Add a slight delay before uploading the image (optional, to ensure the message is posted first)
-                time.sleep(1)
+            image_url = 'https://drive.google.com/uc?export=download&id=1EZN2zNH9CFS23KbfZYW4W1U4_JLQ4Dcy'  # Replace with the actual URL of the image in Google Drive
+            if image_url:
+                # Upload the image to Slack
+                image_private_url = upload_image_to_slack(image_url, slack_token)
+                if image_private_url:
+                    print(f"Image uploaded to Slack for {name} (Birthday).")
+                else:
+                    print(f"Error uploading image to Slack for {name} (Birthday).")
 
-                image_url = 'https://drive.google.com/uc?export=download&id=1EZN2zNH9CFS23KbfZYW4W1U4_JLQ4Dcy'  # Replace with the actual URL of the image in Google Drive
-                if image_url:
-                    # Upload the image to Slack
-                    image_private_url = upload_image_to_slack(image_url, slack_token)
-                    if image_private_url:
-                        print(f"Image uploaded to Slack for {name}.")
-                    else:
-                        print(f"Error uploading image to Slack for {name}.")
+        # Check if today is an employee's work anniversary
+        if (
+            employee_status != 'ex'
+            and doj_date.day == current_date.day
+            and doj_date.month == current_date.month
+        ):
+            # Customize the work anniversary message
+            message = f"Congratulations, {name} on reaching another milestone in your career! Your dedication, commitment, and hard work inspire us all. Here's to many more successful years together !!! 🎉🎊"
 
-            elif event_type == 'DOJ':
-                # Check if the work anniversary message has been posted already
-                if not row.get('Work_Anniversary_Message_Posted'):
-                    # Mark the work anniversary message as posted in the data
-                    row['Work_Anniversary_Message_Posted'] = True
+            try:
+                response = slack_client.chat_postMessage(channel='C02JXF77LKH', text=message)
+                # Handle API errors
+                if response["ok"]:
+                    print(f"Message posted for {name} in Slack (Work Anniversary).")
+                else:
+                    print(f"Error posting message for {name} in Slack (Work Anniversary): {response['error']}")
+            except SlackApiError as e:
+                print(f"Error posting message for {name} in Slack (Work Anniversary): {e.response['error']}")
 
-                    message = f"Congratulations, {name}, on your work anniversary! Thank you for your dedication and hard work. 🎉🎊"
-                    try:
-                        response = slack_client.chat_postMessage(channel='C05JE13BDTJ', text=message)
-                        # Handle API errors
-                        if response["ok"]:
-                            print(f"Message posted for {name} in Slack.")
-                        else:
-                            print(f"Error posting message for {name} in Slack: {response['error']}")
-                    except SlackApiError as e:
-                        print(f"Error posting message for {name} in Slack: {e.response['error']}")
-
-    # Update the data back to the Google Sheet to mark the birthday and work anniversary messages as posted
-    sheet.update('A2', data)
+    print("All data processed.")
 
 # Call the function to read the Google Sheet and identify events today
 read_google_sheet()
